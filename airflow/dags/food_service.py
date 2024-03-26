@@ -20,11 +20,8 @@ import os
 time_zone = 'America/Chicago'
 
 # GCS Stuff
-LOCATION = "us-central1"
 BUCKET = "food-orders-us"
 NAME_PREFIX = "food_daily"
-
-LOCAL_PATH = "/tmp/food"
 
 default_args = {
     "owner": "JD",
@@ -63,6 +60,7 @@ with DAG(dag_id="food_service_pipeline",
          schedule_interval="@daily",
          start_date=pendulum.datetime(2024, 2, 21, tz=time_zone),
          default_args=default_args,
+         max_active_runs=1,
          catchup=False
          ) as dag:
 # [END instantiate_dag]
@@ -102,7 +100,7 @@ with DAG(dag_id="food_service_pipeline",
                                                     )
     
     # upload cleaned file to gcs /processed folder
-    upload_file_to_gcs = LocalFilesystemToGCSOperator(task_id="pcrocessed_file_to_gcs",
+    upload_file_to_gcs = LocalFilesystemToGCSOperator(task_id="clean_file_to_gcs",
                                                       src="{{params.local_path}}/{{params.clean_dest}}/{{task_instance.xcom_pull('list_files', key='return_value')}}",
                                                       dst="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}")
     
@@ -112,8 +110,16 @@ with DAG(dag_id="food_service_pipeline",
     # delete cleaned data file and clean folder from local
     delete_clean_folder = BashOperator(task_id="delete_clean_folder", bash_command="rm -rf {{params.local_path}}/{{params.clean_dest}}")
 
-    # TODO: Transfer data to BigQuery 
-    
+    # Transfer data to BigQuery 
+    transfer_to_bq = GCSToBigQueryOperator(task_id="transfer_from_gs_to_bq",
+                                           destination_project_dataset_table="dataset_food_orders.delivery_orders",
+                                           source_objects="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}", 
+                                           write_disposition='WRITE_APPEND',
+                                           create_disposition='CREATE_IF_NEEDED',
+                                           autodetect=True,
+                                           schema_object="schema/schema.json",
+                                           skip_leading_rows=0)
+
     data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] 
-    clean_data >> [delete_original_file, upload_file_to_gcs] >> delete_clean_folder
-    
+    clean_data >> [delete_original_file, upload_file_to_gcs] 
+    upload_file_to_gcs >> [delete_clean_folder, transfer_to_bq]

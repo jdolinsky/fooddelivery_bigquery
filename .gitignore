@@ -22,3 +22,4 @@ __pycache__/
 airflow.cfg
 airflow/logs/
 airflow/plugins/
+airflow/dags/scripts/schema.json

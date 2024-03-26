@@ -29,8 +29,8 @@ def data_cleanup(file_path, file_name, file_dest):
         os.mkdir(outdir)
 
     fullpath = os.path.join(outdir, file_name)   
-    df.to_csv(fullpath)
+    df.to_csv(fullpath, index=False, header=False)
 
 # test
 if __name__ == '__main__':
-    data_cleanup("mnt/files", "food_daily_2024-03-16.csv")
+    data_cleanup("mnt/files", "food_daily_2024-03-16.csv", 'clean')

@@ -4,6 +4,7 @@ from airflow.operators.bash import BashOperator
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectsWithPrefixExistenceSensor
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_local import GCSToLocalFilesystemOperator
+from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.operators.python import PythonOperator
@@ -111,7 +112,7 @@ with DAG(dag_id="food_service_pipeline",
     # delete cleaned data file and clean folder from local
     delete_clean_folder = BashOperator(task_id="delete_clean_folder", bash_command="rm -rf {{params.local_path}}/{{params.clean_dest}}")
 
-    # TBD: transfer data to BigQuery 
+    # TODO: Transfer data to BigQuery 
     
     data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] 
     clean_data >> [delete_original_file, upload_file_to_gcs] >> delete_clean_folder

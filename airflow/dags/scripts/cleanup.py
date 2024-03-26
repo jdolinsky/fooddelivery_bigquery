@@ -15,7 +15,7 @@ def rm_colon_spchars(text):
         return text
 
 # clean up
-def data_cleanup(file_path, file_name):
+def data_cleanup(file_path, file_name, file_dest):
     # load data
     fullpath = os.path.join(file_path, file_name)  
     df = pd.read_csv(fullpath)
@@ -24,8 +24,7 @@ def data_cleanup(file_path, file_name):
     # remove colons and convert to lower case
     df["items"] = df["items"].map(rm_colon_spchars).map(lambda t : t.lower())
     # save to csv
-    outdir = 'clean'
-    outdir = os.path.join(file_path, outdir)
+    outdir = os.path.join(file_path, file_dest)
     if not os.path.exists(outdir):
         os.mkdir(outdir)
 

@@ -1,5 +1,6 @@
 from airflow import DAG
 from datetime import datetime, timedelta
+from airflow.operators.bash import BashOperator
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectsWithPrefixExistenceSensor
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_local import GCSToLocalFilesystemOperator
@@ -38,7 +39,9 @@ default_args = {
     "params": {
         "local_path":"/tmp/food",
         # destination folder for cleaned files
-        "dest": "processed/" 
+        "dest": "processed/", 
+        # cleaned file folder
+        "clean_dest": "clean"
     }
 }
 
@@ -86,7 +89,9 @@ with DAG(dag_id="food_service_pipeline",
     # clean data in downloaded csv
     clean_data = PythonOperator(task_id="clean_data",
                                 python_callable=cl.data_cleanup,
-                                op_kwargs={"file_path": "{{params.local_path}}", "file_name": "{{task_instance.xcom_pull('list_files', key='return_value')}}"}
+                                op_kwargs={"file_path": "{{params.local_path}}", 
+                                           "file_name": "{{task_instance.xcom_pull('list_files', key='return_value')}}",
+                                           "file_dest": "{{params.clean_dest}}"}
                                 )
     
     # delete file from google storage once it was downloaded
@@ -99,5 +104,8 @@ with DAG(dag_id="food_service_pipeline",
     upload_file_to_gcs = LocalFilesystemToGCSOperator(task_id="pcrocessed_file_to_gcs",
                                                       src="{{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}",
                                                       dst="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}")
+    
+    # delete downloaded data file
+    #delete_original_file = BashOperator(task_id="delete_downloaded_file", bash_command="rm {{}}") 
     
     data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] >> upload_file_to_gcs

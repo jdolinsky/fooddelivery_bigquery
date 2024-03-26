@@ -58,7 +58,7 @@ def list_file_names(bucket, prefix):
 # [START instantiate_dag]
 with DAG(dag_id="food_service_pipeline",
          schedule_interval="@daily",
-         start_date=pendulum.datetime(2024, 2, 21, tz=time_zone),
+         start_date=pendulum.datetime(2024, 3, 21, tz=time_zone),
          default_args=default_args,
          max_active_runs=1,
          catchup=False
@@ -105,10 +105,12 @@ with DAG(dag_id="food_service_pipeline",
                                                       dst="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}")
     
     # delete downloaded data file
-    delete_original_file = BashOperator(task_id="delete_downloaded_file", bash_command="rm {{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}") 
+    delete_original_file = BashOperator(task_id="delete_downloaded_file", 
+                                        bash_command="rm {{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}") 
     
     # delete cleaned data file and clean folder from local
-    delete_clean_folder = BashOperator(task_id="delete_clean_folder", bash_command="rm -rf {{params.local_path}}/{{params.clean_dest}}")
+    delete_clean_folder = BashOperator(task_id="delete_clean_folder", 
+                                       bash_command="rm -rf {{params.local_path}}/{{params.clean_dest}}")
 
     # Transfer data to BigQuery 
     transfer_to_bq = GCSToBigQueryOperator(task_id="transfer_from_gs_to_bq",
@@ -117,9 +119,16 @@ with DAG(dag_id="food_service_pipeline",
                                            write_disposition='WRITE_APPEND',
                                            create_disposition='CREATE_IF_NEEDED',
                                            autodetect=True,
+                                           # schema location on GS
                                            schema_object="schema/schema.json",
                                            skip_leading_rows=0)
+    
+    # Delete processed file from gs 
+    delete_processed_file_from_gcs = GCSDeleteObjectsOperator(task_id="delete_processed_from_GCS",
+                                                    prefix=None,
+                                                    objects=["{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}"]
+                                                    )
 
     data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] 
     clean_data >> [delete_original_file, upload_file_to_gcs] 
-    upload_file_to_gcs >> [delete_clean_folder, transfer_to_bq]
+    upload_file_to_gcs >> [delete_clean_folder, transfer_to_bq] >> delete_processed_file_from_gcs 

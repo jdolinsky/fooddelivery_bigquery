@@ -17,9 +17,8 @@
 # Built Visual Studio Code Extensions
 *.vsix
 # Cahche files
-airflow/dags/__pycache__/
-airflow/dags/scripts/__pycache__/
-
+__pycache__/
 # airflow logs and plugins
+airflow.cfg
 airflow/logs/
 airflow/plugins/

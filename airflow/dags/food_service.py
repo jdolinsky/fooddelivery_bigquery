@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from airflow.providers.google.cloud.sensors.gcs import GCSObjectsWithPrefixExistenceSensor
 from airflow.providers.google.cloud.operators.gcs import GCSDeleteObjectsOperator
 from airflow.providers.google.cloud.transfers.gcs_to_local import GCSToLocalFilesystemOperator
+from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
 from airflow.providers.google.cloud.hooks.gcs import GCSHook
 from airflow.operators.python import PythonOperator
 
@@ -29,12 +30,15 @@ default_args = {
     "retry_delay": timedelta(minutes=3),
     # google cloud operator/sesor parameters
     "gcp_conn_id": "google_cloud_food_service",
+    "google_cloud_conn_id": "google_cloud_food_service",
     "prefix": "food_daily",
     "bucket": "food-orders-us",
     "bucket_name": "food-orders-us",
     # other parameters
     "params": {
-        "local_path":"/tmp/food"
+        "local_path":"/tmp/food",
+        # destination folder for cleaned files
+        "dest": "processed/" 
     }
 }
 
@@ -92,4 +96,8 @@ with DAG(dag_id="food_service_pipeline",
                                                     )
     
     # upload cleaned file to gcs /processed folder
-    data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data]
+    upload_file_to_gcs = LocalFilesystemToGCSOperator(task_id="pcrocessed_file_to_gcs",
+                                                      src="{{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}",
+                                                      dst="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}")
+    
+    data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] >> upload_file_to_gcs

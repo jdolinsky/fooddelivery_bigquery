@@ -102,10 +102,17 @@ with DAG(dag_id="food_service_pipeline",
     
     # upload cleaned file to gcs /processed folder
     upload_file_to_gcs = LocalFilesystemToGCSOperator(task_id="pcrocessed_file_to_gcs",
-                                                      src="{{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}",
+                                                      src="{{params.local_path}}/{{params.clean_dest}}/{{task_instance.xcom_pull('list_files', key='return_value')}}",
                                                       dst="{{params.dest}}{{task_instance.xcom_pull('list_files', key='return_value')}}")
     
     # delete downloaded data file
-    #delete_original_file = BashOperator(task_id="delete_downloaded_file", bash_command="rm {{}}") 
+    delete_original_file = BashOperator(task_id="delete_downloaded_file", bash_command="rm {{params.local_path}}/{{task_instance.xcom_pull('list_files', key='return_value')}}") 
     
-    data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] >> upload_file_to_gcs
+    # delete cleaned data file and clean folder from local
+    delete_clean_folder = BashOperator(task_id="delete_clean_folder", bash_command="rm -rf {{params.local_path}}/{{params.clean_dest}}")
+
+    # TBD: transfer data to BigQuery 
+    
+    data_file_available >> list_files >> download_file >> [delete_file_from_gcs, clean_data] 
+    clean_data >> [delete_original_file, upload_file_to_gcs] >> delete_clean_folder
+    

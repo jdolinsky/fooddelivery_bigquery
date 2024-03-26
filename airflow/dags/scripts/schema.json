@@ -1,0 +1,57 @@
+[
+    {
+      "name": "customer_id",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "order_date",
+      "mode": "NULLABLE",
+      "type": "DATE"
+    },
+    {
+      "name": "order_time",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "order_id",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "items",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "amount",
+      "mode": "NULLABLE",
+      "type": "NUMERIC"
+    },
+    {
+      "name": "mode",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "restaurant",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "status",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    },
+    {
+      "name": "ratings",
+      "mode": "NULLABLE",
+      "type": "INTEGER"
+    },
+    {
+      "name": "feedback",
+      "mode": "NULLABLE",
+      "type": "STRING"
+    }
+  ]

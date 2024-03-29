@@ -11,7 +11,7 @@ The ETL pipeline is built to handle batch transactions. It could be adapted to r
 * Load the CSV file with daily transactions from GCS to a dedicated workstation
 * Read and transform the data, and output the cleaned data in a CSV file using pandas
 * Upload the processed CSV file back to GCS 
-* Load the data into a BigQuery warehouse
+* Load the data into a BigQuery table
 
 Initial data exploration of a sample CSV using [Google Colab](https://colab.research.google.com/drive/1hDmEUaY3SmjFDCEodYh0IyWJOrkl4P7-?usp=sharing) revealed the steps to clean the data before storing it in BigQuery:
 * Remove duplicate rows

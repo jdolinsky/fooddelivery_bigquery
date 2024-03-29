@@ -36,9 +36,9 @@ default_args = {
     # other parameters
     "params": {
         "local_path":"/tmp/food",
-        # destination folder for cleaned files
+        # destination folder for cleaned files in GCS
         "dest": "processed/", 
-        # cleaned file folder
+        # cleaned file folder on local
         "clean_dest": "clean"
     }
 }
